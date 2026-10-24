@@ -16,6 +16,7 @@ import {
   Layers3,
   Menu,
   Search,
+  Scale,
   Sparkles,
   X,
 } from "lucide-react";
@@ -23,6 +24,9 @@ import { DOCS_URL, request, routeHref } from "./api";
 import type { ApiItem, Spec } from "./api";
 import { Catalog, collections, DataCard, ItemDetail, isSaved } from "./catalog";
 import Explorer from "./Explorer";
+import EliView, { eliTitles } from "./Eli";
+import { ELI_DOCS, ELI_SAVED_KEY, eliRequest, readSavedActs } from "./eli-api";
+import type { Act, Publisher } from "./eli-api";
 import { downloadJson, Empty, ErrorState, Loading } from "./ui";
 
 function readRoute() {
@@ -48,12 +52,24 @@ function readSaved(): ApiItem[] {
 }
 export default function App() {
   const [route, setRoute] = useState(readRoute);
+  const isEli = route.view.startsWith("eli-");
   const [saved, setSaved] = useState<ApiItem[]>(readSaved);
+  const [savedActs, setSavedActs] = useState<Act[]>(() => {
+    try {
+      return readSavedActs(localStorage.getItem(ELI_SAVED_KEY));
+    } catch {
+      return [];
+    }
+  });
+  const [publishers, setPublishers] = useState<Publisher[]>([]);
+  const [publisherError, setPublisherError] = useState<Error>();
+  const [connectionRevision, setConnectionRevision] = useState(0);
   const [notice, setNotice] = useState("");
   const [menu, setMenu] = useState(false);
   const [counts, setCounts] = useState<Record<string, number | undefined>>({});
   const [apiStatus, setApiStatus] = useState("Łączenie z API");
-  const [spec, setSpec] = useState<Spec>();
+  const [loadedSpec, setSpec] = useState<{ eli: boolean; value: Spec }>();
+  const spec = loadedSpec?.eli === isEli ? loadedSpec.value : undefined;
   const [specError, setSpecError] = useState<Error>();
   useEffect(() => {
     const handler = () => {
@@ -71,30 +87,73 @@ export default function App() {
   }, [notice]);
   useEffect(() => {
     const controller = new AbortController();
-    Promise.allSettled(
-      ["datasets", "resources", "institutions"].map(async (key) => {
-        const r = await request(`/${key}?per_page=1`, controller.signal);
-        setCounts((v) => ({ ...v, [key]: r.body.meta?.count }));
-      }),
-    ).then((results) => {
-      if (!controller.signal.aborted)
-        setApiStatus(
-          results.every((r) => r.status === "fulfilled")
-            ? "API dostępne"
-            : "Sprawdź połączenie",
-        );
-    });
-    fetch("./openapi.json", { signal: controller.signal })
+    setApiStatus("Łączenie z API");
+    setSpec(undefined);
+    setSpecError(undefined);
+    setPublisherError(undefined);
+    if (isEli) {
+      eliRequest<Publisher[]>("/acts", controller.signal)
+        .then((r) => {
+          if (!controller.signal.aborted) {
+            setPublishers(r.body);
+            setApiStatus("API dostępne");
+          }
+        })
+        .catch((error: Error) => {
+          if (!controller.signal.aborted) {
+            setPublisherError(error);
+            setApiStatus("Sprawdź połączenie");
+          }
+        });
+    } else
+      Promise.allSettled(
+        ["datasets", "resources", "institutions"].map(async (key) => {
+          const r = await request(`/${key}?per_page=1`, controller.signal);
+          if (!controller.signal.aborted)
+            setCounts((v) => ({ ...v, [key]: r.body.meta?.count }));
+        }),
+      ).then((results) => {
+        if (!controller.signal.aborted)
+          setApiStatus(
+            results.every((r) => r.status === "fulfilled")
+              ? "API dostępne"
+              : "Sprawdź połączenie",
+          );
+      });
+    fetch(isEli ? "./eli-openapi.json" : "./openapi.json", {
+      signal: controller.signal,
+    })
       .then((r) => {
         if (!r.ok) throw new Error("Nie można pobrać specyfikacji");
         return r.json();
       })
-      .then(setSpec)
+      .then((value: Spec) => {
+        if (!controller.signal.aborted) setSpec({ eli: isEli, value });
+      })
       .catch((e) => {
         if (!controller.signal.aborted) setSpecError(e);
       });
     return () => controller.abort();
-  }, []);
+  }, [isEli, connectionRevision]);
+  function toggleActSave(act: Act) {
+    const exists = savedActs.some((s) => s.ELI === act.ELI);
+    const next = exists
+      ? savedActs.filter((s) => s.ELI !== act.ELI)
+      : [...savedActs, act];
+    try {
+      localStorage.setItem(ELI_SAVED_KEY, JSON.stringify(next));
+      setSavedActs(next);
+      setNotice(
+        exists
+          ? "Usunięto akt z zapisanych"
+          : "Zapisano akt w tej przeglądarce",
+      );
+    } catch {
+      setNotice(
+        "Nie udało się zapisać. Pamięć przeglądarki może być pełna lub niedostępna.",
+      );
+    }
+  }
   function toggleSave(item: ApiItem) {
     const exists = isSaved(item, saved);
     const next = exists
@@ -112,15 +171,23 @@ export default function App() {
       );
     }
   }
-  const nav = [
-    ["datasets", Database],
-    ["resources", FileText],
-    ["institutions", Building2],
-    ["showcases", Sparkles],
-    ["histories", History],
-    ["search", Search],
-  ] as const;
+  const nav = isEli
+    ? ([
+        ["eli-acts", Scale],
+        ["eli-journals", BookOpen],
+        ["eli-dictionaries", Layers3],
+        ["eli-changes", History],
+      ] as const)
+    : ([
+        ["datasets", Database],
+        ["resources", FileText],
+        ["institutions", Building2],
+        ["showcases", Sparkles],
+        ["histories", History],
+        ["search", Search],
+      ] as const);
   const title =
+    eliTitles[route.view] ||
     collections[route.view]?.title ||
     {
       api: "Eksplorator API",
@@ -130,7 +197,7 @@ export default function App() {
     }[route.view] ||
     "Katalog";
   return (
-    <div className="app">
+    <div className={`app ${isEli ? "eli-app" : ""}`}>
       <a
         className="skip-link"
         href="#main-content"
@@ -149,9 +216,9 @@ export default function App() {
         />
       )}
       <aside className={`sidebar ${menu ? "open" : ""}`}>
-        <a className="brand" href="#/datasets">
+        <a className="brand" href={isEli ? "#/eli-acts" : "#/datasets"}>
           <span className="brand-icon">
-            <Database size={24} />
+            {isEli ? <Scale size={24} /> : <Database size={24} />}
           </span>
           <span>
             Gov<span className="brand-accent">API</span>
@@ -175,7 +242,7 @@ export default function App() {
               aria-current={route.view === key ? "page" : undefined}
             >
               <Icon size={19} />
-              <span>{collections[key].title}</span>
+              <span>{eliTitles[key] || collections[key]?.title}</span>
               {route.view === key && <span className="nav-indicator" />}
             </a>
           ))}
@@ -183,8 +250,8 @@ export default function App() {
         <div className="sidebar-section-label tools-label">TWÓJ WARSZTAT</div>
         <nav aria-label="Narzędzia">
           <a
-            href="#/api"
-            className={`nav-link ${route.view === "api" ? "active" : ""}`}
+            href={isEli ? "#/eli-api" : "#/api"}
+            className={`nav-link ${route.view === "api" || route.view === "eli-api" ? "active" : ""}`}
           >
             <Code2 size={19} />
             <span>Eksplorator API</span>
@@ -193,13 +260,15 @@ export default function App() {
             </span>
           </a>
           <a
-            href="#/saved"
-            className={`nav-link ${route.view === "saved" ? "active" : ""}`}
+            href={isEli ? "#/eli-saved" : "#/saved"}
+            className={`nav-link ${route.view === "saved" || route.view === "eli-saved" ? "active" : ""}`}
           >
             <Bookmark size={19} />
             <span>Zapisane</span>
-            {saved.length > 0 && (
-              <span className="nav-count">{saved.length}</span>
+            {(isEli ? savedActs.length : saved.length) > 0 && (
+              <span className="nav-count">
+                {isEli ? savedActs.length : saved.length}
+              </span>
             )}
           </a>
         </nav>
@@ -218,13 +287,13 @@ export default function App() {
               <br />
               Odkryj całe publiczne API.
             </p>
-            <a href="#/api">
+            <a href={isEli ? "#/eli-api" : "#/api"}>
               Zacznij odkrywać <ArrowRight size={14} />
             </a>
           </div>
           <a
             className="sidebar-docs"
-            href={DOCS_URL}
+            href={isEli ? ELI_DOCS : DOCS_URL}
             target="_blank"
             rel="noreferrer"
           >
@@ -233,41 +302,63 @@ export default function App() {
           </a>
           <div className="sidebar-version">
             <span>GovAPI Explorer</span>
-            <span>v1.0</span>
+            <span>v1.1</span>
           </div>
         </div>
       </aside>
       <div className="workspace">
         <header className="topbar">
-          <div className="breadcrumbs">
-            <button
-              className="mobile-toggle icon-button"
-              aria-label="Otwórz menu"
-              onClick={() => setMenu(true)}
-            >
-              <Menu size={21} />
-            </button>
-            <span>Przestrzeń danych</span>
-            <ChevronRight size={14} />
-            <strong>{title}</strong>
-          </div>
-          <div className="topbar-right">
-            <span
-              className={`live-status ${apiStatus === "API dostępne" ? "online" : ""}`}
-            >
-              <i />
-              {apiStatus}
-            </span>
-            <span className="version-badge">API v1.4</span>
+          <nav className="api-switcher" aria-label="Wybierz API">
             <a
-              className="icon-button"
-              href="https://github.com/kopecp/GovAPI"
-              target="_blank"
-              rel="noreferrer"
-              aria-label="Repozytorium GitHub"
+              href="#/datasets"
+              className={!isEli ? "active" : ""}
+              aria-current={!isEli ? "true" : undefined}
             >
-              <GitFork size={19} />
+              <Database size={16} />
+              <span>Dane.gov.pl</span>
             </a>
+            <a
+              href="#/eli-acts"
+              className={isEli ? "active" : ""}
+              aria-current={isEli ? "true" : undefined}
+            >
+              <Scale size={16} />
+              <span>ELI · Akty prawne</span>
+            </a>
+          </nav>
+          <div className="topbar-context">
+            <div className="breadcrumbs">
+              <button
+                className="mobile-toggle icon-button"
+                aria-label="Otwórz menu"
+                onClick={() => setMenu(true)}
+              >
+                <Menu size={21} />
+              </button>
+              <span>{isEli ? "Przestrzeń prawa" : "Przestrzeń danych"}</span>
+              <ChevronRight size={14} />
+              <strong>{title}</strong>
+            </div>
+            <div className="topbar-right">
+              <span
+                className={`live-status ${apiStatus === "API dostępne" ? "online" : ""}`}
+              >
+                <i />
+                {apiStatus}
+              </span>
+              <span className="version-badge">
+                {isEli ? "ELI API" : "API v1.4"}
+              </span>
+              <a
+                className="icon-button"
+                href="https://github.com/kopecp/GovAPI"
+                target="_blank"
+                rel="noreferrer"
+                aria-label="Repozytorium GitHub"
+              >
+                <GitFork size={19} />
+              </a>
+            </div>
           </div>
         </header>
         <main
@@ -281,7 +372,26 @@ export default function App() {
                 : `${route.view}-${route.params}`
           }
         >
-          {route.view === "api" ? (
+          {isEli ? (
+            <>
+              {publisherError &&
+                ["eli-acts", "eli-journals"].includes(route.view) && (
+                  <ErrorState
+                    error={publisherError}
+                    retry={() => setConnectionRevision((v) => v + 1)}
+                  />
+                )}
+              <EliView
+                view={route.view}
+                params={route.params}
+                publishers={publishers}
+                saved={savedActs}
+                toggleSave={toggleActSave}
+                spec={spec}
+                specError={specError}
+              />
+            </>
+          ) : route.view === "api" ? (
             spec ? (
               <Explorer
                 spec={spec}
@@ -364,8 +474,13 @@ export default function App() {
           <span>Niezależna przeglądarka danych publicznych</span>
           <span>
             Źródło:{" "}
-            <a href="https://dane.gov.pl" target="_blank" rel="noreferrer">
-              dane.gov.pl <ExternalLink size={12} />
+            <a
+              href={isEli ? "https://eli.gov.pl/" : "https://dane.gov.pl"}
+              target="_blank"
+              rel="noreferrer"
+            >
+              {isEli ? "eli.gov.pl · API Sejmu" : "dane.gov.pl"}{" "}
+              <ExternalLink size={12} />
             </a>
             <i /> Otwarte dane, otwarte możliwości.
           </span>

@@ -2101,6 +2101,367 @@ h1 {
 .card-top .bookmark {
   margin-left: auto;
 }
+.topbar {
+  height: auto;
+  min-height: 104px;
+  padding-top: 14px;
+  padding-bottom: 14px;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 13px;
+}
+.topbar-context {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.api-switcher {
+  display: inline-flex;
+  align-self: flex-start;
+  background: #edf1ec;
+  border: 1px solid #dce4db;
+  padding: 4px;
+  border-radius: 10px;
+  gap: 4px;
+}
+.api-switcher a {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 9px 15px;
+  border-radius: 7px;
+  font-size: 12px;
+  color: #607468;
+  font-weight: 600;
+}
+.api-switcher a.active {
+  background: var(--green);
+  color: white;
+  box-shadow: 0 2px 5px #155d4b18;
+}
+.eli-stats .selected {
+  border-color: var(--green);
+}
+.eli-address {
+  font-size: 11px;
+  color: var(--green);
+  font-weight: 650;
+  margin-bottom: 10px;
+}
+.eli-act-card h3 {
+  line-height: 1.65;
+  margin-bottom: 18px;
+}
+.eli-act-card .tags {
+  margin-top: auto;
+}
+.eli-act-card .tags > span {
+  white-space: normal;
+  line-height: 1.5;
+}
+.eli-act-card .eli-status {
+  background: #f1f1e9;
+  color: #62664f;
+  text-transform: none;
+}
+.tags .eli-status.in-force {
+  color: #186146;
+  background: #e4f2e9;
+}
+.eli-list {
+  grid-template-columns: 1fr;
+}
+.eli-list .data-card {
+  padding: 20px 24px;
+}
+.eli-list .card-top {
+  margin-bottom: 8px;
+}
+.eli-list .card-bottom {
+  margin-top: 10px;
+}
+.eli-direct {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin: 0 0 20px;
+  flex-wrap: wrap;
+}
+.eli-direct label {
+  font-size: 12px;
+  color: var(--muted);
+}
+.eli-direct input {
+  flex: 1;
+  min-width: 180px;
+}
+.eli-direct input,
+.eli-filter-grid input,
+.eli-filter-grid select {
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  background: #fff;
+  border-radius: 6px;
+  font-size: 12px;
+  width: 100%;
+}
+.eli-direct input {
+  width: auto;
+}
+.eli-filters {
+  padding-bottom: 18px;
+}
+.eli-filter-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 15px;
+  margin-top: 18px;
+}
+.eli-filter-grid label {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  font-size: 11px;
+  color: #526b5e;
+}
+.eli-filter-submit {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+}
+.eli-sort-row {
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) auto;
+  align-items: end;
+}
+.eli-sort-row .button {
+  white-space: nowrap;
+}
+.eli-request-info {
+  margin-top: 20px;
+  font-size: 11px;
+  color: var(--muted);
+}
+.eli-request-info summary {
+  cursor: pointer;
+}
+.eli-request-info code {
+  display: block;
+  overflow-wrap: anywhere;
+  margin: 12px 0;
+}
+.eli-journals {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.eli-journals h2 {
+  margin-bottom: 12px;
+}
+.eli-year-panel {
+  margin-top: 22px;
+}
+.eli-year-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 20px 0;
+}
+.eli-year-grid a {
+  border: 1px solid var(--line);
+  background: #f7faf5;
+  padding: 9px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+}
+.eli-year-grid a:hover {
+  border-color: var(--green);
+  color: var(--green);
+}
+.eli-dictionary-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+.eli-dictionary-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  border-top: 1px solid var(--line);
+  gap: 0 24px;
+}
+.eli-dictionary-list > div {
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.eli-keywords {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 15px;
+}
+.eli-references summary,
+.eli-structure summary {
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+}
+.eli-references ul {
+  list-style: none;
+  padding: 0;
+  margin-bottom: 0;
+}
+.eli-references li {
+  padding: 14px 0;
+  border-bottom: 1px solid var(--line);
+}
+.eli-references a {
+  display: grid;
+  gap: 6px;
+  font-size: 12px;
+  line-height: 1.65;
+}
+.eli-references a:hover {
+  color: var(--green);
+  text-decoration: underline;
+}
+.eli-references small {
+  display: block;
+  color: var(--muted);
+  margin-top: 6px;
+}
+.eli-files {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 18px 0;
+}
+.eli-file {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.eli-file span {
+  display: grid;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+}
+.eli-file strong {
+  font-size: 12px;
+}
+.eli-file small {
+  font-size: 11px;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+.eli-file:hover {
+  border-color: var(--green);
+}
+.eli-text {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.85;
+  max-height: 800px;
+  overflow: auto;
+}
+.eli-text-note {
+  margin-top: 12px;
+  line-height: 1.7;
+}
+.eli-structure ul {
+  padding-left: 22px;
+  font-size: 12px;
+  line-height: 1.8;
+}
+.eli-structure li {
+  margin: 8px 0;
+}
+.eli-app .detail-heading h1 {
+  line-height: 1.45;
+}
+.eli-app .parameter-field > input {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: white;
+}
+.eli-app .parameter-field > small {
+  display: block;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.6;
+  margin-top: 6px;
+}
+.eli-app .endpoint-sidebar code {
+  overflow-wrap: anywhere;
+}
+@media (max-width: 1100px) {
+  .eli-filter-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .eli-sort-row .eli-filter-submit {
+    grid-column: 1 / -1;
+  }
+}
+@media (max-width: 720px) {
+  .topbar {
+    padding: 12px 18px;
+    gap: 12px;
+  }
+  .api-switcher {
+    align-self: stretch;
+  }
+  .api-switcher a {
+    flex: 1;
+    padding: 9px 8px;
+    font-size: 11px;
+  }
+  .eli-direct label {
+    width: 100%;
+  }
+  .eli-files,
+  .eli-journals,
+  .eli-dictionary-list {
+    grid-template-columns: 1fr;
+  }
+  .eli-app .tabs {
+    gap: 15px;
+    overflow-x: auto;
+  }
+  .eli-app .tabs button {
+    white-space: nowrap;
+  }
+  .eli-app .results-toolbar {
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .eli-app .eyebrow {
+    line-height: 1.8;
+  }
+  .eli-app .stats-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .eli-app .stats-row .stat:last-child {
+    display: none;
+  }
+}
+@media (max-width: 400px) {
+  .eli-filter-grid {
+    grid-template-columns: 1fr;
+  }
+}
 @media (max-width: 720px) {
   .card-description {
     font-size: 11px;
